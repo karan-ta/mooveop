@@ -42,18 +42,18 @@ import com.google.android.gms.location.LocationServices
 import com.google.gson.Gson
 
 data class Chef(
-    val signaturedishimagename:String,
-    val chefphotoname:String,
-    val chefprofilephoto:String,
-    val chefname:String,
-    val chefbio:String,
-    val cuisinename:String,
-    val likes:Int,
-    val id:Int,
-    val lat2:Double,
-    val long2:Double,
-    val lat2cosine:Double,
-    val menuList:List<MenuItem>
+    val signaturedishimagename:String = "",
+    val chefphotoname:String = "",
+    val chefprofilephoto:String = "",
+    val chefname:String = "",
+    val chefbio:String = "",
+    val cuisinename:String = "",
+    val likes:Int = 0,
+    val id:Int = 0,
+    val lat2:Double = 0.0,
+    val long2:Double = 0.0,
+    val lat2cosine:Double = 0.0,
+    val menuList:List<MenuItem> = listOf()
 )
 data class MenuItem(
     val itemid:Int,
@@ -101,6 +101,7 @@ class MainActivity : ComponentActivity() {
             Response.Listener<String> { response ->
                 // Display the first 500 characters of the response string.
                 restaurantsJson = "Response is: ${response.substring(0, 500)}"
+              println ("inside get data callback")
                 println (response)
                  restaurantsData = Gson ().fromJson(
                     response,
@@ -171,7 +172,6 @@ class MainActivity : ComponentActivity() {
                        modifier = Modifier.fillMaxSize().padding(top=20.dp)
                     ) {
                        for (myChef in restaurantsData) {
-
 
                            val id = resources.getIdentifier(
                                myChef.signaturedishimagename.replace(
