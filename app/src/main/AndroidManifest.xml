@@ -14,6 +14,11 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.MooveopApp">
         <activity
+            android:name=".ViewCartActivity"
+            android:exported="true"
+            android:label="@string/title_activity_view_cart"
+            android:theme="@style/Theme.MooveopApp.NoActionBar" />
+        <activity
             android:name=".MenuActivity"
             android:exported="true"
             android:label="@string/title_activity_menu"

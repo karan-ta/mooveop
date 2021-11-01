@@ -65,7 +65,6 @@ data class MenuItem(
 class MainActivity : ComponentActivity() {
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private val LOCATION_PERMISSION_REQ_CODE = 1000
-
     private var restaurantsJson by mutableStateOf("")
    private var restaurantsData by mutableStateOf(emptyArray<Chef>())
     override fun onRequestPermissionsResult(
@@ -142,7 +141,6 @@ class MainActivity : ComponentActivity() {
         startActivity (menuIntent)
     }
     override fun onCreate(savedInstanceState: Bundle?) {
-
         super.onCreate(savedInstanceState)
         getLocationDetails()
         setContent {
