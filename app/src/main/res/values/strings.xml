@@ -2,4 +2,5 @@
     <string name="app_name">MooveopApp</string>
     <string name="title_activity_menu">MenuActivity</string>
     <string name="title_activity_view_cart">ViewCartActivity</string>
+    <string name="title_activity_delivery">DeliveryActivity</string>
 </resources>

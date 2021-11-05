@@ -35,7 +35,6 @@ import android.content.SharedPreferences
 import com.google.gson.reflect.TypeToken
 import java.lang.reflect.Type
 
-
 data class CartItem(
     val itemid:Int=0,
     val itemphotoname:String="",
@@ -49,13 +48,11 @@ data class CartItem(
 class MenuActivity : ComponentActivity() {
     private var menuData by mutableStateOf (Chef())
     private var chefName:String? = ""
-    var menuMap = mutableMapOf <Int,CartItem>()
+    var myMenuMap = mutableMapOf <Int,CartItem>()
     var shopMap = mutableStateMapOf<String,MutableMap<Int,CartItem>>()
     var menuItemList = mutableStateListOf <CartItem>()
     var myShopMap = mutableMapOf <String,MutableList<CartItem>>()
     val PREFS_FILENAME = "com.kodeplay.mooveopapp.prefs"
-
-
 //    var mPrefs = getPreferences(MODE_PRIVATE)
     fun getMenu(chefName:String)
     {//merge itemcartquantity from myShopmap
@@ -78,7 +75,13 @@ class MenuActivity : ComponentActivity() {
                     Chef::class.java
                 )
                 var theIndex = 0
+                var currentItemCartQuantity = 0
                 for (myMenuItem in menuData.menuList) {
+                    var currentItemCartQuantity = 0
+                    if (myMenuMap.containsKey(myMenuItem.itemid)) {
+                            currentItemCartQuantity =
+                                myMenuMap[myMenuItem.itemid]!!.itemCartQuantity
+                        }
                     menuItemList.add (
                         CartItem(
                             myMenuItem.itemid,
@@ -86,25 +89,12 @@ class MenuActivity : ComponentActivity() {
                             myMenuItem.itemname,
                             myMenuItem.itemdesc,
                             myMenuItem.itemprice,
-                            0,
-                            theIndex
+                            currentItemCartQuantity
+
                         )
                             )
                     theIndex++
-                    menuMap[myMenuItem.itemid] = CartItem(
-                    myMenuItem.itemid,
-                        myMenuItem.itemphotoname,
-                        myMenuItem.itemname,
-                        myMenuItem.itemdesc,
-                        myMenuItem.itemprice,
-                        0
-
-                    )
-
                 }
-                shopMap[chefName] = menuMap
-                println ("shop Map is ")
-                println (shopMap)
             },
             Response.ErrorListener {menuJson = "That didn't work!" })
 
@@ -126,14 +116,20 @@ class MenuActivity : ComponentActivity() {
     }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         val intent = getIntent()
-         chefName = intent.getStringExtra("chefName")
+        chefName = intent.getStringExtra("chefName")
         val gson = Gson()
         val sharedPreferences = getSharedPreferences("com.kodeplay.mooveopapp.prefs", MODE_PRIVATE)
         val json = sharedPreferences.getString("myShopMap", "")
         val type: Type = object : TypeToken<MutableMap<String, MutableList<CartItem>>>() {}.type
-         myShopMap =  Gson().fromJson<MutableMap<String,MutableList<CartItem>>>(json, type)
+        myShopMap =  Gson().fromJson<MutableMap<String,MutableList<CartItem>>>(json, type)
+        val cartItemList = myShopMap[chefName]
+        if (cartItemList != null) {
+            for (theCartItem in cartItemList)
+            {
+                myMenuMap[theCartItem.itemid] = theCartItem
+            }
+        }
         if (chefName == null) {
             setContent {
                 Text ("Shop Name not received. Please contact - 9820011185")
