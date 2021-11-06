@@ -1,5 +1,5 @@
 package com.kodeplay.mooveopapp
-
+import android.app.Activity
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -22,13 +22,66 @@ import com.android.volley.toolbox.StringRequest
 import com.android.volley.toolbox.Volley
 import com.google.gson.Gson
 import com.kodeplay.mooveopapp.ui.theme.MooveopAppTheme
-class DeliveryActivity : ComponentActivity() {
+import com.razorpay.Checkout
+import com.razorpay.PaymentResultListener
+import org.json.JSONObject
+import java.nio.charset.Charset
+data class RazorpayOrder(
+    val amount:Int,
+    val amount_paid:Int,
+    val notes:Array<String>,
+    val created_at:Int,
+    val amount_due:Int,
+    var currency:String,
+    var receipt:String,
+    var id:String,
+    var entity:String,
+    var offer_id:Any,
+    var status:String,
+    var attempts:Int
+
+)
+class DeliveryActivity : ComponentActivity(), PaymentResultListener {
     lateinit var isGateDelivery:MutableState<Boolean>
     lateinit var isFlatDelivery:MutableState<Boolean>
     lateinit var phoneNumberText:MutableState<String>
     lateinit var flatNumberText:MutableState<String>
     lateinit var buildingNameText:MutableState<String>
     lateinit var landmarkText:MutableState<String>
+
+    private fun startPayment() {
+        /*
+        *  You need to pass current activity in order to let Razorpay create CheckoutActivity
+        * */
+        val activity: Activity = this
+        val co = Checkout()
+        try {
+            val options = JSONObject()
+            options.put("name","Razorpay Corp")
+            options.put("description","Demoing Charges")
+            //You can omit the image option to fetch the image from dashboard
+            options.put("image","https://s3.amazonaws.com/rzp-mobile/images/rzp.png")
+            options.put("theme.color", "#3399cc");
+            options.put("currency","INR");
+            options.put("order_id", "order_DBJOWzybf0sJbb");
+            options.put("amount","50000")//pass amount in currency subunits
+
+            val retryObj =  JSONObject();
+            retryObj.put("enabled", true);
+            retryObj.put("max_count", 4);
+            options.put("retry", retryObj);
+
+            val prefill = JSONObject()
+            prefill.put("email","gaurav.kumar@example.com")
+            prefill.put("contact","9876543210")
+
+            options.put("prefill",prefill)
+            co.open(activity,options)
+        }catch (e: Exception){
+            println (e.message)
+            e.printStackTrace()
+        }
+    }
 
     fun validateAddressForm (errorString:MutableState<String>)
     {
@@ -61,69 +114,43 @@ class DeliveryActivity : ComponentActivity() {
         {
             errorString.value = "Enter Landmark Name."
         }
-        else
-        {
+        else {
             errorString.value = ""
-//            //send request to api to create order, save address.
-//            const paramString = "&amount="+cartTotal*100+"&deliveryType="+data.deliveryAt+"&landmark="+data.landmark+"&buildingName="+data.buildingName+"&flatNumber="+data.flatNumber
-//            fetch(process.env.api_url+"razorpaytesting",{
-//                mode:"cors",
-//                method: "POST",
-//                headers: new Headers({
-//                'Content-Type': 'application/x-www-form-urlencoded', // <-- Specifying the Content-Type
-//            }),
-//                body: paramString,
-
-
             val queue = Volley.newRequestQueue(this)
-//        val url = "https://mooveop.herokuapp.com/"+locationText
-            val url = "https://mooveop.herokuapp.com/19.2352291/72.8417576"
-            println ("inside getRestaurants")
-            println ("https://mooveop.herokuapp.com/"+locationText)
-
-// Request a string response from the provided URL.
-            val stringRequest = StringRequest(
-                Request.Method.GET, url,
-                Response.Listener<String> { response ->
-                    // Display the first 500 characters of the response string.
-                    restaurantsJson = "Response is: ${response.substring(0, 500)}"
-                    println ("inside get data callback")
-                    println (response)
-                    restaurantsData = Gson ().fromJson(
-                        response,
-                        Array<Chef>::class.java
-                    )
-                },
-                Response.ErrorListener {restaurantsJson = "That didn't work!" })
-
-// Add the request to the RequestQueue.
-            queue.add(stringRequest)
+            val url = "https://mooveop.herokuapp.com/razorpaytesting"
+            val requestBody = "amount=3000&deliveryType=flat&landmark="+landmarkText.value+"&buildingName="+buildingNameText.value+"&flatNumber="+flatNumberText.value
+            val stringReq : StringRequest =
+                object : StringRequest(Method.POST, url,
+                    Response.Listener { response ->
+                        // response
+                        var strResp = response.toString()
+                        println ("created order")
+                        println (response)
+                        println (strResp)
+                        var razorpayOrderData = Gson ().fromJson(
+                            response,
+                            RazorpayOrder::class.java
+                        )
+                        println (razorpayOrderData.id)
+                        startPayment ()
+                    },
+                    Response.ErrorListener { error ->
+                    }
+                ){
+                    override fun getBody(): ByteArray {
+                        return requestBody.toByteArray(Charset.defaultCharset())
+                    }
+                }
+            queue.add(stringReq)
         }
-//        else if (isFlatDelivery && isGateDelivery)
-//        {
-//            setErrorString("Select either gate or flat delivery.")
-//
-//        }
-//
-//
-//        else if (flatNumberRef.current.value == "")
-//        {
-//            setErrorString("Enter Flat Number")
-//
-//        }
-//        else if (buildingName.label == undefined)
-//        {
-//            setErrorString("select building name.")
-//        }
-//        else if (landmarkInputRef.current.value == "" )
-//        {
-//            setErrorString("Enter landmark name.")
-//
-//        }
     }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        Checkout().setKeyID("rzp_test_MAVdJtlc3h9K7x")
         setContent {
+
+            Checkout.preload(applicationContext)
             var errorString = remember {mutableStateOf ("")}
             LazyColumn (modifier = Modifier.padding (
                 start = 20.dp,
@@ -226,5 +253,13 @@ class DeliveryActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onPaymentSuccess(p0: String?) {
+        TODO("Not yet implemented")
+    }
+
+    override fun onPaymentError(p0: Int, p1: String?) {
+        TODO("Not yet implemented")
     }
 }
