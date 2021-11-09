@@ -1,12 +1,11 @@
 package com.kodeplay.mooveopapp
 import android.app.Activity
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.*
 import androidx.compose.runtime.*
@@ -18,14 +17,33 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.android.volley.Request
 import com.android.volley.Response
+import com.android.volley.toolbox.JsonObjectRequest
 import com.android.volley.toolbox.StringRequest
 import com.android.volley.toolbox.Volley
 import com.google.gson.Gson
 import com.kodeplay.mooveopapp.ui.theme.MooveopAppTheme
 import com.razorpay.Checkout
+import com.razorpay.PaymentData
 import com.razorpay.PaymentResultListener
+import com.razorpay.PaymentResultWithDataListener
 import org.json.JSONObject
 import java.nio.charset.Charset
+import com.android.volley.AuthFailureError
+
+
+
+data class BackendCartItem(
+    val chefId:Int,
+    val itemId:Int,
+    val itemQty:Int
+)
+data class VerifySignatureData(
+    val orderId:String,
+    val paymentId:String,
+    val signature:String,
+    val secret:String,
+    val cartItems:Array<BackendCartItem>
+)
 data class RazorpayOrder(
     val amount:Int,
     val amount_paid:Int,
@@ -41,20 +59,84 @@ data class RazorpayOrder(
     var attempts:Int
 
 )
-class DeliveryActivity : ComponentActivity(), PaymentResultListener {
+class DeliveryActivity : ComponentActivity(), PaymentResultWithDataListener {
     lateinit var isGateDelivery:MutableState<Boolean>
     lateinit var isFlatDelivery:MutableState<Boolean>
     lateinit var phoneNumberText:MutableState<String>
     lateinit var flatNumberText:MutableState<String>
     lateinit var buildingNameText:MutableState<String>
     lateinit var landmarkText:MutableState<String>
+    lateinit var co:Checkout
+    lateinit var isThankYou:MutableState<Boolean>
+    private var isSessionCart = false
+    private fun verifySignature (PaymentData: PaymentData) {
+//        val queue = Volley.newRequestQueue(this)
+//        val url = "https://mooveop.herokuapp.com/razorpaysignature"
+//        val options = JSONObject()
+//        options.put("paymentId",PaymentData.paymentId)
+//        options.put("orderId",PaymentData.orderId)
+//        options.put("signature",PaymentData.signature)
+//        options.put("secret","CxddGtImY1enXfYnoQjDUumU")
+        //TODO
+        val cartToBeSaved = arrayOf (BackendCartItem (1,1,1),BackendCartItem (2,1,1))
+//        options.put("cartItems",cartToBeSaved)
+        val verifySignatureDataString = Gson ().toJson(VerifySignatureData (
+            PaymentData.orderId,
+            PaymentData.paymentId,
+            PaymentData.signature,
+            "CxddGtImY1enXfYnoQjDUumU",
+            cartToBeSaved
+        ))
+        println ("json data string to be sent")
+        println (verifySignatureDataString)
+//        val jsonReq = JsonObjectRequest(Request.Method.POST, url, options, Response.Listener { response ->
+//            val str = response.toString()
+//           println (str)
+//            println ("signature verified")
+//        }, Response.ErrorListener {
+//                error ->
+//          println("${error.message}")
+//        })
+//        queue.add(jsonReq)
+        val url = "https://mooveop.herokuapp.com/razorpaysignature"
+        val queue = Volley.newRequestQueue(this)
+        val stringReq : StringRequest =
+            object : StringRequest(Method.POST, url,
+                Response.Listener { response ->
+                    // response
+                    var strResp = response.toString()
+                    println ("verified signature")
+                    println (response)
+                    println (strResp)
+                    isThankYou.value = true
 
-    private fun startPayment() {
+                },
+                Response.ErrorListener { error ->
+                }
+            ){
+                override fun getBody(): ByteArray {
+                    return verifySignatureDataString.toByteArray(Charset.defaultCharset())
+                }
+                //below is must have as backend expects this
+                override fun getBodyContentType(): String? {
+                    return "application/json"
+                }
+
+
+                override fun getHeaders(): MutableMap<String, String> {
+                    val headers = HashMap<String, String>()
+                    headers["Content-Type"] = "application/json"
+                    return headers
+                }
+            }
+        queue.add(stringReq)
+    }
+
+    private fun startPayment(orderId:String) {
         /*
         *  You need to pass current activity in order to let Razorpay create CheckoutActivity
         * */
         val activity: Activity = this
-        val co = Checkout()
         try {
             val options = JSONObject()
             options.put("name","Razorpay Corp")
@@ -63,8 +145,8 @@ class DeliveryActivity : ComponentActivity(), PaymentResultListener {
             options.put("image","https://s3.amazonaws.com/rzp-mobile/images/rzp.png")
             options.put("theme.color", "#3399cc");
             options.put("currency","INR");
-            options.put("order_id", "order_DBJOWzybf0sJbb");
-            options.put("amount","50000")//pass amount in currency subunits
+            options.put("order_id", orderId);
+            options.put("amount","3000")//pass amount in currency subunits
 
             val retryObj =  JSONObject();
             retryObj.put("enabled", true);
@@ -132,7 +214,7 @@ class DeliveryActivity : ComponentActivity(), PaymentResultListener {
                             RazorpayOrder::class.java
                         )
                         println (razorpayOrderData.id)
-                        startPayment ()
+                        startPayment (razorpayOrderData.id)
                     },
                     Response.ErrorListener { error ->
                     }
@@ -144,14 +226,62 @@ class DeliveryActivity : ComponentActivity(), PaymentResultListener {
             queue.add(stringReq)
         }
     }
+    fun showMainActivity ()
+    {
+        val mainActivityIntent = Intent(this, MainActivity::class.java)
+        startActivity (mainActivityIntent)
+    }
+    fun getSessionCart ()
+    {
+        val sharedPreferences = getSharedPreferences("com.kodeplay.mooveopapp.prefs", MODE_PRIVATE)
+        val json = sharedPreferences.getString("myShopMap", "")
+        if (json != null) {
+            isSessionCart = true
+        }
+    }
+    fun showCart()
+    {
+        val cartIntent = Intent(this, ViewCartActivity::class.java)
+        startActivity (cartIntent)
+    }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        Checkout().setKeyID("rzp_test_MAVdJtlc3h9K7x")
+        getSessionCart ()
+        co = Checkout ()
+        co.setKeyID("rzp_test_MAVdJtlc3h9K7x")
         setContent {
-
             Checkout.preload(applicationContext)
             var errorString = remember {mutableStateOf ("")}
+
+            isThankYou = remember {mutableStateOf(false)}
+            val scaffoldState = rememberScaffoldState(rememberDrawerState(DrawerValue.Open))
+            val materialBlue700= Color(0xFF1976D2)
+            Scaffold (
+                bottomBar = {
+                    if (isSessionCart)
+                        BottomAppBar(modifier=Modifier.clickable { showCart () },
+                            backgroundColor = materialBlue700
+                        )
+                        {
+                            Text("View Cart")
+                        }
+                },
+           content={
+               if (isThankYou.value)
+            {
+                Column(modifier = Modifier.padding (
+                    start = 20.dp,
+                    end=20.dp
+                )){
+                    Text ("Thank You for your order.")
+                    Button(onClick = {showMainActivity () }) {
+                        Text ("Continue Shopping")
+                    }
+                }
+
+
+            }
+            else
             LazyColumn (modifier = Modifier.padding (
                 start = 20.dp,
                 end=20.dp
@@ -252,14 +382,21 @@ class DeliveryActivity : ComponentActivity(), PaymentResultListener {
                    Text ("${errorString.value}")
                 }
             }
+        })
         }
     }
 
-    override fun onPaymentSuccess(p0: String?) {
-        TODO("Not yet implemented")
-    }
 
-    override fun onPaymentError(p0: Int, p1: String?) {
-        TODO("Not yet implemented")
+
+    override fun onPaymentError(errorCode: Int, response: String?, p2: PaymentData?) {
+
+    }
+    override fun onPaymentSuccess(razorpayPaymentId: String?, PaymentData: PaymentData) {
+        println ("razorpay success")
+        println (razorpayPaymentId)
+        println (PaymentData.orderId)
+        println (PaymentData.paymentId)
+        println (PaymentData.signature)
+        verifySignature (PaymentData)
     }
 }

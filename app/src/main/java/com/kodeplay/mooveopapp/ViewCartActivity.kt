@@ -1,5 +1,4 @@
 package com.kodeplay.mooveopapp
-
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -12,7 +11,6 @@ import com.kodeplay.mooveopapp.ui.theme.MooveopAppTheme
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import java.lang.reflect.Type
-
 
 class ViewCartActivity : ComponentActivity() {
 //    var mPrefs = getPreferences(MODE_PRIVATE)

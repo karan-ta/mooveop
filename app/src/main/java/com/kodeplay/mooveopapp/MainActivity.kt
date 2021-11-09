@@ -8,6 +8,7 @@ import com.kodeplay.mooveopapp.ui.theme.MooveopAppTheme
 import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationListener
@@ -40,6 +41,8 @@ import com.android.volley.toolbox.Volley
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
+import java.lang.reflect.Type
 
 data class Chef(
     val signaturedishimagename:String = "",
@@ -62,11 +65,13 @@ data class MenuItem(
     val itemdesc:String,
     val itemprice:String,
 )
+
 class MainActivity : ComponentActivity() {
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private val LOCATION_PERMISSION_REQ_CODE = 1000
     private var restaurantsJson by mutableStateOf("")
    private var restaurantsData by mutableStateOf(emptyArray<Chef>())
+    private var isSessionCart = false
     override fun onRequestPermissionsResult(
         requestCode: Int, permissions: Array<out String>, grantResults: IntArray
     ) {
@@ -140,10 +145,26 @@ class MainActivity : ComponentActivity() {
         menuIntent.putExtra("chefName",chefName)
         startActivity (menuIntent)
     }
+    fun showCart()
+    {
+        val cartIntent = Intent(this, ViewCartActivity::class.java)
+        startActivity (cartIntent)
+    }
+    fun getSessionCart ()
+    {
+        val sharedPreferences = getSharedPreferences("com.kodeplay.mooveopapp.prefs", MODE_PRIVATE)
+        val json = sharedPreferences.getString("myShopMap", "")
+        if (json != null) {
+            isSessionCart = true
+        }
+    }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         getLocationDetails()
+        getSessionCart ()
         setContent {
+            val scaffoldState = rememberScaffoldState(rememberDrawerState(DrawerValue.Open))
+            val materialBlue700= Color(0xFF1976D2)
 //                Button(onClick = { getLocationDetails() }) {
 //                    Text("Click For Location")
 //                }
@@ -161,12 +182,17 @@ class MainActivity : ComponentActivity() {
 //                Text ("$restaurantsJson")
                 println (restaurantsData.size)
                 if (restaurantsData.size > 0)
-//                    LazyColumn  (
-//                        verticalArrangement = Arrangement.spacedBy(4.dp),
-//                        modifier=Modifier.padding(20.dp)
-////                            .border(BorderStroke(2.dp, Color.Red))
-//                    ){
-                   LazyColumn(
+                    Scaffold(
+                    bottomBar = {
+                        if (isSessionCart)
+                        BottomAppBar(modifier=Modifier.clickable { showCart () },
+                        backgroundColor = materialBlue700
+                        )
+                        {
+                            Text("View Cart")
+                        }
+                                },
+                      content={LazyColumn(
                        modifier = Modifier.fillMaxSize().padding(top=20.dp)
                     ) {
                        for (myChef in restaurantsData) {
@@ -223,7 +249,8 @@ class MainActivity : ComponentActivity() {
                            }
                        }
 
-                   }
+                   }}
+                    )
         }
     }
     @Composable

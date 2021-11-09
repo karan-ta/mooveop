@@ -32,6 +32,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import android.content.SharedPreferences
+import androidx.compose.foundation.clickable
 import com.google.gson.reflect.TypeToken
 import java.lang.reflect.Type
 
@@ -53,6 +54,7 @@ class MenuActivity : ComponentActivity() {
     var menuItemList = mutableStateListOf <CartItem>()
     var myShopMap = mutableMapOf <String,MutableList<CartItem>>()
     val PREFS_FILENAME = "com.kodeplay.mooveopapp.prefs"
+    lateinit var isSessionCart:MutableState<Boolean>
 //    var mPrefs = getPreferences(MODE_PRIVATE)
     fun getMenu(chefName:String)
     {//merge itemcartquantity from myShopmap
@@ -103,6 +105,7 @@ class MenuActivity : ComponentActivity() {
     }
     fun showCart()
     {
+        // we assume that cart is updated whenever the view cart button is clicked as update to shared preferences looks cheap
         val sharedPreferences =  getSharedPreferences(PREFS_FILENAME, Context.MODE_PRIVATE)
         val cartIntent = Intent(this, ViewCartActivity::class.java)
         val prefsEditor: SharedPreferences.Editor = sharedPreferences.edit()
@@ -114,22 +117,27 @@ class MenuActivity : ComponentActivity() {
         prefsEditor.commit()
         startActivity (cartIntent)
     }
+    fun getSessionCart ()
+    {
+        val sharedPreferences = getSharedPreferences("com.kodeplay.mooveopapp.prefs", MODE_PRIVATE)
+        val json = sharedPreferences.getString("myShopMap", "")
+        if (json != null) {
+            isSessionCart.value = true
+            val type: Type = object : TypeToken<MutableMap<String, MutableList<CartItem>>>() {}.type
+            myShopMap = Gson().fromJson<MutableMap<String, MutableList<CartItem>>>(json, type)
+            val cartItemList = myShopMap[chefName]
+            if (cartItemList != null) {
+                for (theCartItem in cartItemList) {
+                    myMenuMap[theCartItem.itemid] = theCartItem
+                }
+            }
+        }
+    }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val intent = getIntent()
         chefName = intent.getStringExtra("chefName")
-        val gson = Gson()
-        val sharedPreferences = getSharedPreferences("com.kodeplay.mooveopapp.prefs", MODE_PRIVATE)
-        val json = sharedPreferences.getString("myShopMap", "")
-        val type: Type = object : TypeToken<MutableMap<String, MutableList<CartItem>>>() {}.type
-        myShopMap =  Gson().fromJson<MutableMap<String,MutableList<CartItem>>>(json, type)
-        val cartItemList = myShopMap[chefName]
-        if (cartItemList != null) {
-            for (theCartItem in cartItemList)
-            {
-                myMenuMap[theCartItem.itemid] = theCartItem
-            }
-        }
+        getSessionCart ()
         if (chefName == null) {
             setContent {
                 Text ("Shop Name not received. Please contact - 9820011185")
@@ -138,11 +146,13 @@ class MenuActivity : ComponentActivity() {
         else {
             getMenu(chefName!!)
             setContent {
+                isSessionCart = remember{ mutableStateOf(false)}
                 var myMenuItemList = remember {menuItemList}
                 fun updateMenuItemCartQuantity (theIndex:Int,mode:String)
                 {
                     val cartCountBeforeClick = myMenuItemList[theIndex].itemCartQuantity
                     if (mode == "add") {
+                        isSessionCart.value = true
                         myMenuItemList[theIndex] =
                             myMenuItemList[theIndex].copy(itemCartQuantity = cartCountBeforeClick + 1)
                     }
@@ -152,168 +162,196 @@ class MenuActivity : ComponentActivity() {
                             myMenuItemList[theIndex].copy(itemCartQuantity = cartCountBeforeClick - 1)
                     }
                     myShopMap[chefName!!] = myMenuItemList.filter{it.itemCartQuantity>0} as MutableList<CartItem>
+                   var isSessionCartTemp = false
+                   for (thelist in myShopMap.values)
+                   {
+                       if (thelist.size > 0) {
+                           isSessionCartTemp = true
+                           break
+                       }
+                   }
+                    isSessionCart.value = isSessionCartTemp
                     println (myShopMap)
                     println (myMenuItemList)
                 }
-//           Text ("Hello World")
-                if (menuData.menuList.size > 0) {
-                    println(menuData.chefprofilephoto)
-                    println(menuData.chefphotoname)
-                    val profilePhotoId = resources.getIdentifier(
-                        menuData.chefprofilephoto.replace(
-                            "/images/",
-                            ""
-                        ).replace(".jpg", "").replace(".png", ""), "drawable", packageName
-                    )
-                    val chefPhotoId = resources.getIdentifier(
-                        menuData.chefphotoname.replace(
-                            "/images/",
-                            ""
-                        ).replace(".jpg", "").replace(".png", ""), "drawable", packageName
-                    )
-                    LazyColumn()
-                    {
-                        item {
-                            Column {
-                                Image(
-                                    painter = painterResource(id = profilePhotoId),
-                                    contentDescription = "Content description for visually impaired",
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .padding(bottom = 30.dp)
-                                )
+                val scaffoldState = rememberScaffoldState(rememberDrawerState(DrawerValue.Open))
+                val materialBlue700= Color(0xFF1976D2)
+                Scaffold(
+                    bottomBar = {
+                        if (isSessionCart.value)
+                            BottomAppBar(modifier=Modifier.clickable { showCart () },
+                                backgroundColor = materialBlue700
+                            )
+                            {
+                                Text("View Cart")
+                            }
+                    },
+                    content= {
+                        if (menuData.menuList.size > 0) {
+                            println(menuData.chefprofilephoto)
+                            println(menuData.chefphotoname)
+                            val profilePhotoId = resources.getIdentifier(
+                                menuData.chefprofilephoto.replace(
+                                    "/images/",
+                                    ""
+                                ).replace(".jpg", "").replace(".png", ""), "drawable", packageName
+                            )
+                            val chefPhotoId = resources.getIdentifier(
+                                menuData.chefphotoname.replace(
+                                    "/images/",
+                                    ""
+                                ).replace(".jpg", "").replace(".png", ""), "drawable", packageName
+                            )
 
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(80.dp),
-                                    verticalArrangement = Arrangement.Center,
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    Image(
-                                        painter = painterResource(id = chefPhotoId),
-                                        contentDescription = "Content description for visually impaired",
-                                        modifier = Modifier
-                                            .clip(CircleShape)
-                                            .border(2.dp, Color.Gray, CircleShape)
-                                    )
-                                }
-                                Column(modifier = Modifier.padding(top = 20.dp, start = 20.dp))
-                                {
-                                    Text(
-                                        text = menuData.chefname,
-                                        modifier = Modifier.padding(5.dp),
-                                        fontSize = 20.sp
-                                    )
-                                    Text(
-                                        text = menuData.cuisinename,
-                                        modifier = Modifier.padding(5.dp),
-                                        fontSize = 16.sp
-                                    )
-                                }
-                                var theIndex = 0
-                                for (myMenuItem in myMenuItemList) {
-
-                                    var itemPhotoId = resources.getIdentifier(
-                                        myMenuItem.itemphotoname.replace(
-                                            "/images/",
-                                            ""
-                                        ).replace(".jpg", "").replace(".jpeg", "")
-                                            .replace(".png", ""), "drawable", packageName
-                                    )
-                                    Column(
-                                        modifier = Modifier
-                                            .padding(
-                                                start = 20.dp,
-                                                end = 20.dp,
-                                                top = 20.dp,
-                                                bottom = 15.dp
-                                            )
-                                            .border(0.2.dp, Color.Gray, RectangleShape)
-                                    )
-                                    {
+                            LazyColumn()
+                            {
+                                item {
+                                    Column {
                                         Image(
-                                            painter = painterResource(id = itemPhotoId),
-                                            contentDescription = "",
-                                            modifier = Modifier.fillMaxSize()
+                                            painter = painterResource(id = profilePhotoId),
+                                            contentDescription = "Content description for visually impaired",
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .padding(bottom = 30.dp)
                                         )
-                                        Row(
-                                            modifier = Modifier.padding(
-                                                top = 10.dp,
-                                                start = 3.dp
-                                            )
-                                        ) {
-                                            Column(Modifier.weight(4f)) {
-                                                Text(
-                                                    text = myMenuItem.itemname,
-                                                    modifier = Modifier.padding(5.dp),
-                                                    fontSize = 20.sp
-                                                )
-                                            }
-                                            Column(
-                                                Modifier
-                                                    .weight(1f)
-                                                    .fillMaxSize()
-                                            ) {
-                                                Text(
-                                                    text = myMenuItem.itemprice,
-                                                    modifier = Modifier.padding(5.dp),
-                                                    fontSize = 20.sp
-                                                )
-                                            }
 
+                                        Column(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(80.dp),
+                                            verticalArrangement = Arrangement.Center,
+                                            horizontalAlignment = Alignment.CenterHorizontally
+                                        ) {
+                                            Image(
+                                                painter = painterResource(id = chefPhotoId),
+                                                contentDescription = "Content description for visually impaired",
+                                                modifier = Modifier
+                                                    .clip(CircleShape)
+                                                    .border(2.dp, Color.Gray, CircleShape)
+                                            )
                                         }
-                                        Column(modifier = Modifier.padding(start = 3.dp)) {
+                                        Column(
+                                            modifier = Modifier.padding(
+                                                top = 20.dp,
+                                                start = 20.dp
+                                            )
+                                        )
+                                        {
                                             Text(
-                                                text = myMenuItem.itemdesc,
+                                                text = menuData.chefname,
+                                                modifier = Modifier.padding(5.dp),
+                                                fontSize = 20.sp
+                                            )
+                                            Text(
+                                                text = menuData.cuisinename,
                                                 modifier = Modifier.padding(5.dp),
                                                 fontSize = 16.sp
                                             )
                                         }
-                                        Row(
-                                            modifier = Modifier.padding(
-                                                start = 8.dp,
-                                                top = 10.dp
+                                        var theIndex = 0
+                                        for (myMenuItem in myMenuItemList) {
+
+                                            var itemPhotoId = resources.getIdentifier(
+                                                myMenuItem.itemphotoname.replace(
+                                                    "/images/",
+                                                    ""
+                                                ).replace(".jpg", "").replace(".jpeg", "")
+                                                    .replace(".png", ""), "drawable", packageName
                                             )
-                                        ) {
-                                            Button(onClick = {
-                                                updateMenuItemCartQuantity(
-                                                    myMenuItem.theIndex,"subtract"
-                                                )
-                                            }) {
-                                                Text("+")
-                                            }
-                                            Text(
-                                                text="${myMenuItem.itemCartQuantity}",
-                                                fontSize = 25.sp,
-                                                modifier = Modifier.padding(
-                                                    start = 10.dp,
-                                                    end = 10.dp
-                                                )
+                                            Column(
+                                                modifier = Modifier
+                                                    .padding(
+                                                        start = 20.dp,
+                                                        end = 20.dp,
+                                                        top = 20.dp,
+                                                        bottom = 15.dp
+                                                    )
+                                                    .border(0.2.dp, Color.Gray, RectangleShape)
                                             )
-                                            Button(onClick = {
-                                                updateMenuItemCartQuantity(
-                                                    myMenuItem.theIndex,"add"
+                                            {
+                                                Image(
+                                                    painter = painterResource(id = itemPhotoId),
+                                                    contentDescription = "",
+                                                    modifier = Modifier.fillMaxSize()
                                                 )
-                                            }) {
-                                                Text("+")
+                                                Row(
+                                                    modifier = Modifier.padding(
+                                                        top = 10.dp,
+                                                        start = 3.dp
+                                                    )
+                                                ) {
+                                                    Column(Modifier.weight(4f)) {
+                                                        Text(
+                                                            text = myMenuItem.itemname,
+                                                            modifier = Modifier.padding(5.dp),
+                                                            fontSize = 20.sp
+                                                        )
+                                                    }
+                                                    Column(
+                                                        Modifier
+                                                            .weight(1f)
+                                                            .fillMaxSize()
+                                                    ) {
+                                                        Text(
+                                                            text = myMenuItem.itemprice,
+                                                            modifier = Modifier.padding(5.dp),
+                                                            fontSize = 20.sp
+                                                        )
+                                                    }
+
+                                                }
+                                                Column(modifier = Modifier.padding(start = 3.dp)) {
+                                                    Text(
+                                                        text = myMenuItem.itemdesc,
+                                                        modifier = Modifier.padding(5.dp),
+                                                        fontSize = 16.sp
+                                                    )
+                                                }
+                                                Row(
+                                                    modifier = Modifier.padding(
+                                                        start = 8.dp,
+                                                        top = 10.dp
+                                                    )
+                                                ) {
+                                                    Button(onClick = {
+                                                        updateMenuItemCartQuantity(
+                                                            myMenuItem.theIndex, "subtract"
+                                                        )
+                                                    }) {
+                                                        Text("+")
+                                                    }
+                                                    Text(
+                                                        text = "${myMenuItem.itemCartQuantity}",
+                                                        fontSize = 25.sp,
+                                                        modifier = Modifier.padding(
+                                                            start = 10.dp,
+                                                            end = 10.dp
+                                                        )
+                                                    )
+                                                    Button(onClick = {
+                                                        updateMenuItemCartQuantity(
+                                                            myMenuItem.theIndex, "add"
+                                                        )
+                                                    }) {
+                                                        Text("+")
+                                                    }
+                                                }
                                             }
+                                            theIndex++
+                                        }
+                                        Button(onClick = { showCart() }) {
+                                            Text("View cart")
                                         }
                                     }
-                                    theIndex ++
                                 }
-                               Button(onClick = { showCart()}) {
-                                   Text ("View cart")
-                               }
                             }
+                        } else {
+                            Text(
+                                modifier = Modifier.padding(10.dp),
+                                text = "Loading Data. Please Hold On."
+                            )
                         }
-                    }
-                } else {
-                    Text(
-                        modifier = Modifier.padding(10.dp),
-                        text = "Loading Data. Please Hold On."
-                    )
-                }
+                    })
             }
         }
     }
