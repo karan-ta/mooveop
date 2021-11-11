@@ -185,15 +185,20 @@ class MainActivity : ComponentActivity() {
                     Scaffold(
                     bottomBar = {
                         if (isSessionCart)
-                        BottomAppBar(modifier=Modifier.clickable { showCart () },
-                        backgroundColor = materialBlue700
+                        BottomAppBar(modifier= Modifier
+                            .clickable { showCart() }
+                            ,
+                        backgroundColor = materialBlue700,
+
                         )
                         {
                             Text("View Cart")
                         }
                                 },
-                      content={LazyColumn(
-                       modifier = Modifier.fillMaxSize().padding(top=20.dp)
+                      content={innerPadding ->LazyColumn(
+                       modifier = Modifier
+                           .fillMaxSize()
+                           .padding(innerPadding)
                     ) {
                        for (myChef in restaurantsData) {
 
@@ -214,7 +219,10 @@ class MainActivity : ComponentActivity() {
 
                            item {
                            Column(
-                               modifier=Modifier.padding(start=40.dp,end=40.dp,bottom = 30.dp).border(0.2.dp, Color.Gray, RectangleShape).clickable {showMenu (myChef.chefname)}
+                               modifier= Modifier
+                                   .padding(start = 40.dp, end = 40.dp, top = 20.dp,bottom=10.dp)
+                                   .border(0.2.dp, Color.Gray, RectangleShape)
+                                   .clickable { showMenu(myChef.chefname) }
                            ){
                                Image(
                                    painter = painterResource(id = id),
@@ -238,9 +246,13 @@ class MainActivity : ComponentActivity() {
                                        Image(
                                            painter = painterResource(id = chefPhotoId),
                                            contentDescription = "Content description for visually impaired",
-                                           modifier = Modifier.fillMaxSize().clip(CircleShape).border(2.dp, Color.Gray, CircleShape)   // add a border (optional)
+                                           modifier = Modifier
+                                               .fillMaxSize()
+                                               .clip(CircleShape)
+                                               .border(2.dp, Color.Gray, CircleShape)   // add a border (optional)
                                        )
                                    }
+                                   Spacer(modifier = Modifier.padding(bottom=10.dp))
 
                                }
 

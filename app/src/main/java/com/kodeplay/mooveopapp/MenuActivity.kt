@@ -54,7 +54,7 @@ class MenuActivity : ComponentActivity() {
     var menuItemList = mutableStateListOf <CartItem>()
     var myShopMap = mutableMapOf <String,MutableList<CartItem>>()
     val PREFS_FILENAME = "com.kodeplay.mooveopapp.prefs"
-    lateinit var isSessionCart:MutableState<Boolean>
+    var isSessionCart:MutableState<Boolean> = mutableStateOf (false)
 //    var mPrefs = getPreferences(MODE_PRIVATE)
     fun getMenu(chefName:String)
     {//merge itemcartquantity from myShopmap
@@ -137,7 +137,7 @@ class MenuActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         val intent = getIntent()
         chefName = intent.getStringExtra("chefName")
-        getSessionCart ()
+
         if (chefName == null) {
             setContent {
                 Text ("Shop Name not received. Please contact - 9820011185")
@@ -147,6 +147,7 @@ class MenuActivity : ComponentActivity() {
             getMenu(chefName!!)
             setContent {
                 isSessionCart = remember{ mutableStateOf(false)}
+                getSessionCart ()
                 var myMenuItemList = remember {menuItemList}
                 fun updateMenuItemCartQuantity (theIndex:Int,mode:String)
                 {
@@ -206,7 +207,7 @@ class MenuActivity : ComponentActivity() {
                             LazyColumn()
                             {
                                 item {
-                                    Column {
+                                    Column (modifier=Modifier.padding(bottom=20.dp)){
                                         Image(
                                             painter = painterResource(id = profilePhotoId),
                                             contentDescription = "Content description for visually impaired",

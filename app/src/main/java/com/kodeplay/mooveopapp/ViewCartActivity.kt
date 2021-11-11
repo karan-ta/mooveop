@@ -3,10 +3,14 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import com.kodeplay.mooveopapp.ui.theme.MooveopAppTheme
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
@@ -33,22 +37,26 @@ fun showDeliveryAddressPage()
         setContent {
             LazyColumn {
                 item {
-                    Text(
-
-                        text = "Your Order",
-                        style = MaterialTheme.typography.h4,
+                    Column(
+                        modifier= Modifier.padding(start = 40.dp, end = 40.dp, top = 20.dp,bottom=10.dp)
                     )
-                    for (shopName in myShopMap.keys) {
+                    {
                         Text(
-                            text = "${shopName}",
+                            text = "Your Order",
+                            style = MaterialTheme.typography.h4,
                         )
-                        for (myItem in myShopMap[shopName]!!) {
-                            Text("${myItem.itemCartQuantity} x ${myItem.itemname}")
-                            Divider()
+                        for (shopName in myShopMap.keys) {
+                            Text(
+                                text = "${shopName}",
+                            )
+                            for (myItem in myShopMap[shopName]!!) {
+                                Text("${myItem.itemCartQuantity} x ${myItem.itemname}")
+                                Divider()
+                            }
                         }
-                    }
-                    Button(onClick = { showDeliveryAddressPage ()}) {
-
+                        Button(onClick = { showDeliveryAddressPage() }) {
+                            Text("Enter Delivery Address")
+                        }
                     }
                 }
             }
