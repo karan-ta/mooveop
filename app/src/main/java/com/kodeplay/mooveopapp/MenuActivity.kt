@@ -91,7 +91,8 @@ class MenuActivity : ComponentActivity() {
                             myMenuItem.itemname,
                             myMenuItem.itemdesc,
                             myMenuItem.itemprice,
-                            currentItemCartQuantity
+                            currentItemCartQuantity,
+                            theIndex
 
                         )
                             )
@@ -318,6 +319,7 @@ class MenuActivity : ComponentActivity() {
                                                         updateMenuItemCartQuantity(
                                                             myMenuItem.theIndex, "subtract"
                                                         )
+
                                                     }) {
                                                         Text("+")
                                                     }

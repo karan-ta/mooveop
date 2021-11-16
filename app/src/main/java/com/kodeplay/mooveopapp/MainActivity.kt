@@ -189,7 +189,6 @@ class MainActivity : ComponentActivity() {
                             .clickable { showCart() }
                             ,
                         backgroundColor = materialBlue700,
-
                         )
                         {
                             Text("View Cart")
