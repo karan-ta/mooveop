@@ -1,5 +1,7 @@
 package com.kodeplay.mooveopapp
+import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -30,16 +32,31 @@ class ViewCartActivity : ComponentActivity() {
 //    var myShopMap = mutableMapOf <String,MutableList<CartItem>>()
     private var cartTotalValue:Double = 0.0
      private var myShopMap = mutableStateMapOf<String,MutableList<CartItem>>()
+    lateinit private var myShopMapRem:SnapshotStateMap<String, MutableList<CartItem>>
     private var cartTotal = mutableStateOf (0.0)
+    val PREFS_FILENAME = "com.kodeplay.mooveopapp.prefs"
 fun showDeliveryAddressPage()
 {
     val deliveryIntent = Intent(this, DeliveryActivity::class.java)
     startActivity (deliveryIntent)
+    updateSharedPreferences ()
 }
-
+fun updateSharedPreferences (){
+    val sharedPreferences =  getSharedPreferences(PREFS_FILENAME, Context.MODE_PRIVATE)
+    val prefsEditor: SharedPreferences.Editor = sharedPreferences.edit()
+    val json = Gson().toJson(myShopMapRem)
+    println ("my shop map json string")
+    println (json)
+    prefsEditor.putString("myShopMap", json)
+    prefsEditor.commit()
+}
+    override fun onBackPressed ()
+    {
+        updateSharedPreferences ()
+        super.onBackPressed()
+    }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val gson = Gson()
     val sharedPreferences = getSharedPreferences("com.kodeplay.mooveopapp.prefs", MODE_PRIVATE)
     val json = sharedPreferences.getString("myShopMap", "")
         val type: Type = object : TypeToken<MutableMap<String,MutableList<CartItem>>>() {}.type
@@ -53,7 +70,7 @@ fun showDeliveryAddressPage()
     println (myShopMap.keys)
     println (myShopMap.values)
         setContent {
-            var myShopMapRem = remember {myShopMap}
+             myShopMapRem = remember {myShopMap}
             var cartTotalRem = remember {cartTotal}
             fun removeCartItem (shopName:String,theItem:CartItem)
             {
@@ -63,9 +80,7 @@ fun showDeliveryAddressPage()
                 var theList = myShopMapRem[shopName]?.filter{it.itemid != theItem.itemid}
                 cartTotalRem.value = cartTotalRem.value - theItem.itemprice.toDouble()
                 myShopMapRem[shopName] = theList as MutableList<CartItem>
-
                 //update shared preference.
-
             }
             LazyColumn {
                 item {
