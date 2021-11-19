@@ -2,12 +2,19 @@ plugins {
     id 'com.android.application'
     id 'kotlin-android'
 }
-
+apply plugin: 'com.android.application'
+apply plugin: 'com.google.gms.google-services'
+allprojects {
+    repositories {
+        // Check that you have the following line (if not, add it):
+        google()  // Google's Maven repository
+    }
+}
 android {
     compileSdk 31
 
     defaultConfig {
-        applicationId "com.kodeplay.mooveopapp"
+        applicationId "com.mooveop.mooveopapp"
         minSdk 21
         targetSdk 30
         versionCode 1
@@ -66,5 +73,7 @@ dependencies {
     implementation 'com.android.volley:volley:1.2.1'
     implementation 'com.google.code.gson:gson:2.8.7'
     implementation 'com.razorpay:checkout:1.6.12'
+    implementation platform('com.google.firebase:firebase-bom:29.0.0')
     implementation 'com.google.firebase:firebase-auth-ktx:21.0.1'
+
 }

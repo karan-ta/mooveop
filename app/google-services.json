@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "814006913994",
+    "project_id": "mooveop",
+    "storage_bucket": "mooveop.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:814006913994:android:e1cec79c1980ea7bae9d33",
+        "android_client_info": {
+          "package_name": "com.mooveop.mooveopapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "814006913994-fg4svmcaul3n9cos4bc0op4uj803umd5.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.mooveop.mooveopapp",
+            "certificate_hash": "209b26c000513db308e9d5b47742bdfc6b3ee41a"
+          }
+        },
+        {
+          "client_id": "814006913994-4rcrqq31s43lmbuha9jfqj7op440ip6q.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB7aNHUjJ_q-0Jl0_-OYrDBsEgFVxluE3k"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "814006913994-4rcrqq31s43lmbuha9jfqj7op440ip6q.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

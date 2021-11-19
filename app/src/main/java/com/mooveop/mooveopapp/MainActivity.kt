@@ -1,4 +1,4 @@
-package com.kodeplay.mooveopapp
+package com.mooveop.mooveopapp
 import  android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -147,8 +147,10 @@ class MainActivity : ComponentActivity() {
     }
     fun showCart()
     {
-        val cartIntent = Intent(this, ViewCartActivity::class.java)
-        startActivity (cartIntent)
+//        val cartIntent = Intent(this, ViewCartActivity::class.java)
+//        startActivity (cartIntent)
+        val signinIntent = Intent(this, Signin::class.java)
+        startActivity (signinIntent)
     }
     fun getSessionCart ()
     {

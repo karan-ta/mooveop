@@ -1,5 +1,5 @@
 //https://stackoverflow.com/questions/7145606/how-do-you-save-store-objects-in-sharedpreferences-on-android
-package com.kodeplay.mooveopapp
+package com.mooveop.mooveopapp
 import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity

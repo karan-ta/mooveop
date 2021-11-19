@@ -1,4 +1,4 @@
-package com.kodeplay.mooveopapp
+package com.mooveop.mooveopapp
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences

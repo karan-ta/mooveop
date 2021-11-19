@@ -1,5 +1,5 @@
-package com.kodeplay.mooveopapp
-
+package com.mooveop.mooveopapp
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -17,14 +17,41 @@ import androidx.compose.ui.unit.dp
 import com.google.firebase.FirebaseException
 import com.google.firebase.FirebaseTooManyRequestsException
 import com.google.firebase.auth.*
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
 import com.kodeplay.mooveopapp.ui.theme.MooveopAppTheme
 import java.util.concurrent.TimeUnit
 
 class Signin : ComponentActivity() {
     lateinit var phoneNumberText: MutableState<String>
+     var enterOtpText = mutableStateOf ("")
+    private lateinit var otpReceivedFromFirebase:String
     private val mAuth = FirebaseAuth.getInstance()
     var TAG = "mooveop"
+    var inputMode = mutableStateOf ("enterPhoneNumber")
+    fun checkUserLoggedIn ()
+    {
+        val user = Firebase.auth.currentUser
+        if (user != null)
+        {
+            val mainActivityIntent = Intent(this, MainActivity::class.java)
+            startActivity (mainActivityIntent)
+        }
+    }
+    private fun otpVerification(otp: String) {
+        val credential = PhoneAuthProvider.getCredential(otpReceivedFromFirebase, enterOtpText.value)
+        FirebaseAuth.getInstance().signInWithCredential(credential)
+            .addOnCompleteListener(this) { task ->
+                if (task.isSuccessful) {
+                    println ("otp Verification Successful")
+                    checkUserLoggedIn ()
 
+
+                } else {
+                    println ("Wrong Otp")
+                }
+            }
+    }
 
     private fun signInWithPhoneAuthCredential(credential: PhoneAuthCredential) {
         mAuth.signInWithCredential(credential)
@@ -33,7 +60,6 @@ class Signin : ComponentActivity() {
                     // Sign in success, update UI with the signed-in user's information
                     Log.d(TAG, "signInWithCredential:success")
 
-                    val user = task.result?.user
                 } else {
                     // Sign in failed, display a message and update the UI
                     Log.w(TAG, "signInWithCredential:failure", task.exception)
@@ -46,7 +72,6 @@ class Signin : ComponentActivity() {
     }
 
     private val callbacks = object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
-        private var storedVerificationId = ""
         lateinit private var resendToken:PhoneAuthProvider.ForceResendingToken
 
         override fun onVerificationCompleted(credential: PhoneAuthCredential) {
@@ -64,7 +89,6 @@ class Signin : ComponentActivity() {
             // This callback is invoked in an invalid request for verification is made,
             // for instance if the the phone number format is not valid.
             Log.w(TAG, "onVerificationFailed", e)
-
             if (e is FirebaseAuthInvalidCredentialsException) {
                 // Invalid request
             } else if (e is FirebaseTooManyRequestsException) {
@@ -78,14 +102,16 @@ class Signin : ComponentActivity() {
             verificationId: String,
             token: PhoneAuthProvider.ForceResendingToken
         ) {
+            super.onCodeSent(verificationId, token)
             // The SMS verification code has been sent to the provided phone number, we
             // now need to ask the user to enter the code and then construct a credential
             // by combining the code with a verification ID.
             Log.d(TAG, "onCodeSent:$verificationId")
 
             // Save verification ID and resending token so we can use them later
-            storedVerificationId = verificationId
+            otpReceivedFromFirebase = verificationId
             resendToken = token
+            inputMode.value = "enterOtp"
         }
     }
 
@@ -101,21 +127,46 @@ class Signin : ComponentActivity() {
 
     }
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContent {
 
+        super.onCreate(savedInstanceState)
+        //try logging out here to test if it all works ok.
+        Firebase.auth.signOut()
+        checkUserLoggedIn ()
+
+        setContent {
+            inputMode = remember {inputMode}
             phoneNumberText = remember { mutableStateOf("") }
-            Column {
-                OutlinedTextField(
-                    value = phoneNumberText.value,
-                    onValueChange = { phoneNumberText.value = it },
-                    label = { Text("Enter Phone Number") },
-                    modifier = Modifier.width(120.dp)
-                )
-                Button(onClick = {sendPhoneNumberToFirebase (phoneNumberText.value)}) {
-                    Text (
-                        text="Sign In"
-                            )
+            enterOtpText= remember {enterOtpText}
+
+      if  (inputMode.value == "enterPhoneNumber") {
+                Column {
+                    OutlinedTextField(
+                        value = phoneNumberText.value,
+                        onValueChange = { phoneNumberText.value = it },
+                        label = { Text("Enter Phone Number") },
+                        modifier = Modifier.width(120.dp)
+                    )
+                    Button(onClick = { sendPhoneNumberToFirebase(phoneNumberText.value) }) {
+                        Text(
+                            text = "Verify Phone Number"
+                        )
+                    }
+                }
+            }
+            else if (inputMode.value == "enterOtp")
+            {
+                Column {
+                    OutlinedTextField(
+                        value = enterOtpText.value,
+                        onValueChange = { enterOtpText.value = it },
+                        label = { Text("Enter OTP") },
+                        modifier = Modifier.width(120.dp)
+                    )
+                    Button(onClick = { otpVerification(enterOtpText.value) }) {
+                        Text(
+                            text = "Enter OTP"
+                        )
+                    }
                 }
             }
         }
