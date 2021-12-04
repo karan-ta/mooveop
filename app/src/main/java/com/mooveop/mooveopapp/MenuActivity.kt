@@ -122,7 +122,9 @@ class MenuActivity : ComponentActivity() {
     {
         val sharedPreferences = getSharedPreferences("com.kodeplay.mooveopapp.prefs", MODE_PRIVATE)
         val json = sharedPreferences.getString("myShopMap", "")
-        if (json != null) {
+        println ("cart in menu activity is :")
+        println (json)
+        if (json != "") {
             isSessionCart.value = true
             val type: Type = object : TypeToken<MutableMap<String, MutableList<CartItem>>>() {}.type
             myShopMap = Gson().fromJson<MutableMap<String, MutableList<CartItem>>>(json, type)

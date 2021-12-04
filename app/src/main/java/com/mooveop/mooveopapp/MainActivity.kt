@@ -40,6 +40,8 @@ import com.android.volley.toolbox.StringRequest
 import com.android.volley.toolbox.Volley
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import java.lang.reflect.Type
@@ -72,6 +74,16 @@ class MainActivity : ComponentActivity() {
     private var restaurantsJson by mutableStateOf("")
    private var restaurantsData by mutableStateOf(emptyArray<Chef>())
     private var isSessionCart = false
+    override fun onBackPressed() {
+        val user = Firebase.auth.currentUser
+        if (user != null)
+        {
+
+        }
+        else
+            super.onBackPressed ()
+
+    }
     override fun onRequestPermissionsResult(
         requestCode: Int, permissions: Array<out String>, grantResults: IntArray
     ) {

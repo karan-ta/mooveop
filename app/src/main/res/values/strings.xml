@@ -4,4 +4,5 @@
     <string name="title_activity_view_cart">ViewCartActivity</string>
     <string name="title_activity_delivery">DeliveryActivity</string>
     <string name="title_activity_signin">Signin</string>
+    <string name="title_activity_get_rider_quote">GetRiderQuote</string>
 </resources>

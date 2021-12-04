@@ -31,11 +31,14 @@ class Signin : ComponentActivity() {
     var inputMode = mutableStateOf ("enterPhoneNumber")
     fun checkUserLoggedIn ()
     {
+        println ("inside checkUserLoggedIn")
         val user = Firebase.auth.currentUser
         if (user != null)
         {
-            val mainActivityIntent = Intent(this, MainActivity::class.java)
-            startActivity (mainActivityIntent)
+//            val mainActivityIntent = Intent(this, MainActivity::class.java)
+//            startActivity (mainActivityIntent)
+            val getRiderQuoteIntent = Intent(this, GetRiderQuoteActivity::class.java)
+            startActivity (getRiderQuoteIntent)
         }
     }
     private fun otpVerification(otp: String) {
@@ -127,13 +130,14 @@ class Signin : ComponentActivity() {
 
     }
     override fun onCreate(savedInstanceState: Bundle?) {
-
         super.onCreate(savedInstanceState)
-        //try logging out here to test if it all works ok.
-        Firebase.auth.signOut()
-        checkUserLoggedIn ()
+        //try logging out here to test if it all works ok and then comment it out.
+//    Firebase.auth.signOut()
 
+        checkUserLoggedIn ()
         setContent {
+            println ("inside set Content")
+
             inputMode = remember {inputMode}
             phoneNumberText = remember { mutableStateOf("") }
             enterOtpText= remember {enterOtpText}
