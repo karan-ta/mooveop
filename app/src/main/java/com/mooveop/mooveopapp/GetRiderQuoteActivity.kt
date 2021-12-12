@@ -33,36 +33,12 @@ class GetRiderQuoteActivity : ComponentActivity() {
         val placesClient = Places.createClient(this)
         val token = AutocompleteSessionToken.newInstance()
         val bounds = RectangularBounds.newInstance(
+            LatLng(19.199821, 72.842590),
             LatLng(19.251921, 72.868179),
-            LatLng(19.199821, 72.842590)
+
         )
 //        https://developers.google.com/maps/documentation/places/android-sdk/start#maps_places_get_started-kotlin
 //        https://developers.google.com/maps/documentation/places/android-sdk/autocomplete#maps_places_programmatic_place_predictions-kotlin
-        val request =
-            FindAutocompletePredictionsRequest.builder()
-                // Call either setLocationBias() OR setLocationRestriction().
-//                .setLocationBias(bounds)
-                .setLocationRestriction(bounds)
-//                .setOrigin(LatLng(-33.8749937, 151.2041382))
-                .setCountries("IN")
-//                .setTypeFilter(TypeFilter.ADDRESS)
-                .setSessionToken(token)
-                .setQuery("aura yogi nagar")
-                .build()
-        placesClient.findAutocompletePredictions(request)
-            .addOnSuccessListener { response: FindAutocompletePredictionsResponse ->
-                for (prediction in response.autocompletePredictions) {
-                    Log.i("mooveop_place", prediction.placeId)
-                    Log.i("mooveop_place", prediction.getPrimaryText(null).toString())
-                    println (prediction.placeId)
-                    println (prediction.getPrimaryText(null).toString())
-                }
-            }.addOnFailureListener { exception: Exception? ->
-                if (exception is ApiException) {
-                    Log.e("mooveop_placeAG", "Place not found: " + exception.statusCode)
-                    println ("error in maps------ ")
-                }
-            }
 
         setContent {
             var expanded by remember { mutableStateOf(false) }
@@ -75,17 +51,42 @@ class GetRiderQuoteActivity : ComponentActivity() {
                     value = selectedText,
                     onValueChange = {
                         println ("inside value change")
-                        suggestions.removeAll{true}
-                        selectedText = it
-                        for (name in masterSuggestions)
-                        {
-                            if (name.startsWith(selectedText)) {
-                                suggestions.add(name)
-println (selectedText)
-                                println (name.startsWith(selectedText))
+                        val request =
+                            FindAutocompletePredictionsRequest.builder()
+                                // Call either setLocationBias() OR setLocationRestriction().
+//                .setLocationBias(bounds)
+                                .setLocationRestriction(bounds)
+//                .setOrigin(LatLng(-33.8749937, 151.2041382))
+                                .setCountries("IN")
+//                .setTypeFilter(TypeFilter.ADDRESS)
+                                .setSessionToken(token)
+                                .setQuery(it)
+                                .build()
+                        placesClient.findAutocompletePredictions(request)
+                            .addOnSuccessListener { response: FindAutocompletePredictionsResponse ->
+                                suggestions.removeAll{true}
+                                for (prediction in response.autocompletePredictions) {
+                                    Log.i("mooveop_place", prediction.placeId)
+                                    Log.i("mooveop_place", prediction.getPrimaryText(null).toString())
+                                    println (prediction.placeId)
+                                    println (prediction.getPrimaryText(null).toString())
+                                    suggestions.add(prediction.getPrimaryText(null).toString())
+                                }
+                            }.addOnFailureListener { exception: Exception? ->
+                                if (exception is ApiException) {
+                                    Log.e("mooveop_placeAG", "Place not found: " + exception.statusCode)
+                                    println ("error in maps------ ")
+                                }
                             }
-
-                        }
+//                        for (name in masterSuggestions)
+//                        {
+//                            if (name.startsWith(selectedText)) {
+//                                suggestions.add(name)
+//println (selectedText)
+//                                println (name.startsWith(selectedText))
+//                            }
+//
+//                        }
                                     },
                     modifier = Modifier.fillMaxWidth(),
                     label = {Text ("label")}
