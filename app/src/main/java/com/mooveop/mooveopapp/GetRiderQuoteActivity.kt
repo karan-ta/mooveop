@@ -22,9 +22,13 @@ import com.google.android.libraries.places.api.model.RectangularBounds
 import com.google.android.libraries.places.api.model.TypeFilter
 import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest
 import com.google.android.libraries.places.api.net.FindAutocompletePredictionsResponse
+import kotlin.math.roundToInt
 
 class GetRiderQuoteActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
+    var myPlacesData = mutableMapOf <String,Int?>()
+    var totalCost = mutableStateOf(0)
+    var previousTextLength = 0
+        override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // Initialize the SDK
         Places.initialize(applicationContext, "AIzaSyAActYUF3kZoA-KFzulfFGkLAXmx8oYzh4")
@@ -44,19 +48,26 @@ class GetRiderQuoteActivity : ComponentActivity() {
             var expanded by remember { mutableStateOf(false) }
             var masterSuggestions = listOf ("karan", "priya", "vihaan")
             var suggestions = remember { mutableStateListOf <String>() }
+            totalCost = remember {totalCost}
             var selectedText by remember { mutableStateOf("") }
             var dropDownWidth by remember { mutableStateOf(0) }
+
             Column() {
                 OutlinedTextField(
                     value = selectedText,
                     onValueChange = {
-                        println ("inside value change")
+                        previousTextLength = selectedText.length
+                        selectedText = it
+                        println("inside value change")
+                        if (it.length > previousTextLength && it.length > 2)
+                        {
+
                         val request =
                             FindAutocompletePredictionsRequest.builder()
                                 // Call either setLocationBias() OR setLocationRestriction().
 //                .setLocationBias(bounds)
-                                .setLocationRestriction(bounds)
-//                .setOrigin(LatLng(-33.8749937, 151.2041382))
+//                                .setLocationRestriction(bounds)
+                                .setOrigin(LatLng(19.23674, 72.84211))
                                 .setCountries("IN")
 //                .setTypeFilter(TypeFilter.ADDRESS)
                                 .setSessionToken(token)
@@ -64,18 +75,38 @@ class GetRiderQuoteActivity : ComponentActivity() {
                                 .build()
                         placesClient.findAutocompletePredictions(request)
                             .addOnSuccessListener { response: FindAutocompletePredictionsResponse ->
-                                suggestions.removeAll{true}
+                                suggestions.removeAll { true }
+                                myPlacesData.clear()
                                 for (prediction in response.autocompletePredictions) {
                                     Log.i("mooveop_place", prediction.placeId)
-                                    Log.i("mooveop_place", prediction.getPrimaryText(null).toString())
-                                    println (prediction.placeId)
-                                    println (prediction.getPrimaryText(null).toString())
-                                    suggestions.add(prediction.getPrimaryText(null).toString())
+                                    Log.i(
+                                        "mooveop_place",
+                                        prediction.getPrimaryText(null).toString()
+                                    )
+                                    println(prediction.placeId)
+                                    println(prediction.getPrimaryText(null).toString())
+                                    println(prediction.distanceMeters.toString())
+                                    if (!myPlacesData.containsKey(
+                                            prediction.getPrimaryText(null).toString()
+                                        )
+                                    )
+                                        myPlacesData.put(
+                                            prediction.getPrimaryText(null).toString(),
+                                            prediction.distanceMeters
+                                        )
+                                    if (!suggestions.contains(
+                                            prediction.getPrimaryText(null).toString()
+                                        )
+                                    )
+                                        suggestions.add(prediction.getPrimaryText(null).toString())
                                 }
                             }.addOnFailureListener { exception: Exception? ->
                                 if (exception is ApiException) {
-                                    Log.e("mooveop_placeAG", "Place not found: " + exception.statusCode)
-                                    println ("error in maps------ ")
+                                    Log.e(
+                                        "mooveop_placeAG",
+                                        "Place not found: " + exception.statusCode
+                                    )
+                                    println("error in maps------ ")
                                 }
                             }
 //                        for (name in masterSuggestions)
@@ -87,6 +118,7 @@ class GetRiderQuoteActivity : ComponentActivity() {
 //                            }
 //
 //                        }
+                    }
                                     },
                     modifier = Modifier.fillMaxWidth(),
                     label = {Text ("label")}
@@ -99,12 +131,34 @@ class GetRiderQuoteActivity : ComponentActivity() {
                 ) {
                     suggestions.forEach { label ->
                         DropdownMenuItem(onClick = {
+
                             selectedText = label
+                            println (myPlacesData)
+                            println (label)
+
+                            println ((myPlacesData.get(selectedText)!! * 0.014).roundToInt())
+
+                            totalCost.value = (myPlacesData.get(selectedText)!! * 0.014).roundToInt()
                         }) {
                             Text(text = label)
                         }
                     }
                 }
+                Spacer (modifier=Modifier.height(20.dp))
+                Row{
+                    OutlinedTextField(
+                        label = {Text ("Pickup Time")}
+                    )
+                }
+                Spacer (modifier=Modifier.height(20.dp))
+                Row{
+                    Text (
+                        "Total Cost",
+                        modifier=Modifier.padding(end=10.dp)
+                    )
+                    Text (totalCost.value.toString())
+                }
+
             }
         }
     }}
