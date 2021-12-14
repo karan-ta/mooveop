@@ -3,8 +3,13 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.ArrowDropDown
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
@@ -12,6 +17,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.PopupProperties
 import com.google.android.gms.common.api.ApiException
@@ -28,6 +34,10 @@ class GetRiderQuoteActivity : ComponentActivity() {
     var myPlacesData = mutableMapOf <String,Int?>()
     var totalCost = mutableStateOf(0)
     var previousTextLength = 0
+    var hoursText = mutableStateOf("00")
+    var minutesText = mutableStateOf("00")
+    var riderCount = mutableStateOf (1)
+
         override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // Initialize the SDK
@@ -46,69 +56,96 @@ class GetRiderQuoteActivity : ComponentActivity() {
 
         setContent {
             var expanded by remember { mutableStateOf(false) }
+            var hoursExpanded by remember { mutableStateOf(false) }
+            var minutesExpanded by remember { mutableStateOf(false) }
             var masterSuggestions = listOf ("karan", "priya", "vihaan")
             var suggestions = remember { mutableStateListOf <String>() }
+            var hoursList = remember { mutableStateListOf <String>("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","23") }
+            var minutesList = remember { mutableStateListOf <String>("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24","25","26","27","28","29","30","31","32","33","34","35","36","37","38","39","40","41","42","43","44","45","46","47","48","49","50","51","52","53","54","55","56","57","58","59","60") }
             totalCost = remember {totalCost}
+            riderCount = remember {riderCount}
+            var hoursText by remember {hoursText}
+            var minutesText by remember {minutesText}
             var selectedText by remember { mutableStateOf("") }
             var dropDownWidth by remember { mutableStateOf(0) }
+            Scaffold(
+                floatingActionButton={
+                    FloatingActionButton(
+                        onClick = {riderCount.value +=1},
+                        content={
+                            Icon(
+                                imageVector = Icons.Outlined.Add,
+                                contentDescription = null
+                            )
+                        }
 
-            Column() {
-                OutlinedTextField(
-                    value = selectedText,
-                    onValueChange = {
-                        previousTextLength = selectedText.length
-                        selectedText = it
-                        println("inside value change")
-                        if (it.length > previousTextLength && it.length > 2)
-                        {
+                    )} ,
+                    content={Column() {
+                        for (i in 1..riderCount.value) {
+                            OutlinedTextField(
+                                value = selectedText,
+                                onValueChange = {
+                                    previousTextLength = selectedText.length
+                                    selectedText = it
+                                    println("inside value change")
+                                    if (it.length > previousTextLength && it.length > 2) {
 
-                        val request =
-                            FindAutocompletePredictionsRequest.builder()
-                                // Call either setLocationBias() OR setLocationRestriction().
+                                        val request =
+                                            FindAutocompletePredictionsRequest.builder()
+                                                // Call either setLocationBias() OR setLocationRestriction().
 //                .setLocationBias(bounds)
 //                                .setLocationRestriction(bounds)
-                                .setOrigin(LatLng(19.23674, 72.84211))
-                                .setCountries("IN")
+                                                .setOrigin(LatLng(19.23674, 72.84211))
+                                                .setCountries("IN")
 //                .setTypeFilter(TypeFilter.ADDRESS)
-                                .setSessionToken(token)
-                                .setQuery(it)
-                                .build()
-                        placesClient.findAutocompletePredictions(request)
-                            .addOnSuccessListener { response: FindAutocompletePredictionsResponse ->
-                                suggestions.removeAll { true }
-                                myPlacesData.clear()
-                                for (prediction in response.autocompletePredictions) {
-                                    Log.i("mooveop_place", prediction.placeId)
-                                    Log.i(
-                                        "mooveop_place",
-                                        prediction.getPrimaryText(null).toString()
-                                    )
-                                    println(prediction.placeId)
-                                    println(prediction.getPrimaryText(null).toString())
-                                    println(prediction.distanceMeters.toString())
-                                    if (!myPlacesData.containsKey(
-                                            prediction.getPrimaryText(null).toString()
-                                        )
-                                    )
-                                        myPlacesData.put(
-                                            prediction.getPrimaryText(null).toString(),
-                                            prediction.distanceMeters
-                                        )
-                                    if (!suggestions.contains(
-                                            prediction.getPrimaryText(null).toString()
-                                        )
-                                    )
-                                        suggestions.add(prediction.getPrimaryText(null).toString())
-                                }
-                            }.addOnFailureListener { exception: Exception? ->
-                                if (exception is ApiException) {
-                                    Log.e(
-                                        "mooveop_placeAG",
-                                        "Place not found: " + exception.statusCode
-                                    )
-                                    println("error in maps------ ")
-                                }
-                            }
+                                                .setSessionToken(token)
+                                                .setQuery(it)
+                                                .build()
+                                        placesClient.findAutocompletePredictions(request)
+                                            .addOnSuccessListener { response: FindAutocompletePredictionsResponse ->
+                                                suggestions.removeAll { true }
+                                                myPlacesData.clear()
+                                                for (prediction in response.autocompletePredictions) {
+                                                    Log.i("mooveop_place", prediction.placeId)
+                                                    Log.i(
+                                                        "mooveop_place",
+                                                        prediction.getPrimaryText(null).toString()
+                                                    )
+                                                    println(prediction.placeId)
+                                                    println(
+                                                        prediction.getPrimaryText(null).toString()
+                                                    )
+                                                    println(prediction.distanceMeters.toString())
+                                                    if (!myPlacesData.containsKey(
+                                                            prediction.getPrimaryText(null)
+                                                                .toString()
+                                                        )
+                                                    )
+                                                        myPlacesData.put(
+                                                            prediction.getPrimaryText(null)
+                                                                .toString(),
+                                                            prediction.distanceMeters
+                                                        )
+                                                    if (!suggestions.contains(
+                                                            prediction.getPrimaryText(null)
+                                                                .toString()
+                                                        )
+                                                    )
+                                                        suggestions.add(
+                                                            prediction.getPrimaryText(
+                                                                null
+                                                            ).toString()
+                                                        )
+                                                }
+                                            }.addOnFailureListener { exception: Exception? ->
+                                                if (exception is ApiException) {
+                                                    Log.e(
+                                                        "mooveop_placeAG",
+                                                        "Place not found: " + exception.statusCode
+                                                    )
+                                                    println("error in maps------ ")
+                                                }
+                                            }
 //                        for (name in masterSuggestions)
 //                        {
 //                            if (name.startsWith(selectedText)) {
@@ -118,48 +155,139 @@ class GetRiderQuoteActivity : ComponentActivity() {
 //                            }
 //
 //                        }
-                    }
-                                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = {Text ("label")}
-                )
-                DropdownMenu(
-                    expanded = suggestions.isNotEmpty(),
-                    onDismissRequest = { suggestions.removeAll{true} },
-                    properties = PopupProperties(focusable = false),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    suggestions.forEach { label ->
-                        DropdownMenuItem(onClick = {
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                label = { Text("label") }
+                            )
+                            DropdownMenu(
+                                expanded = suggestions.isNotEmpty(),
+                                onDismissRequest = { suggestions.removeAll { true } },
+                                properties = PopupProperties(focusable = false),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                suggestions.forEach { label ->
+                                    DropdownMenuItem(onClick = {
 
-                            selectedText = label
-                            println (myPlacesData)
-                            println (label)
+                                        selectedText = label
+                                        println(myPlacesData)
+                                        println(label)
 
-                            println ((myPlacesData.get(selectedText)!! * 0.014).roundToInt())
+                                        println((myPlacesData.get(selectedText)!! * 0.014).roundToInt())
 
-                            totalCost.value = (myPlacesData.get(selectedText)!! * 0.014).roundToInt()
-                        }) {
-                            Text(text = label)
+                                        totalCost.value =
+                                            (myPlacesData.get(selectedText)!! * 0.014).roundToInt()
+                                    }) {
+                                        Text(text = label)
+                                    }
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(20.dp))
+                            Row() {
+                                OutlinedTextField(
+                                    value = hoursText,
+                                    onValueChange = { hoursText = it },
+                                    readOnly = true,
+                                    modifier = Modifier
+                                        .clickable { hoursExpanded = true }
+                                        .width(140.dp)
+                                        .padding(start = 20.dp, end = 20.dp),
+                                    trailingIcon = {
+                                        if (hoursExpanded == false) {
+                                            IconButton(onClick = { hoursExpanded = true }) {
+                                                Icon(
+                                                    imageVector = Icons.Outlined.ArrowDropDown,
+                                                    contentDescription = null
+                                                )
+                                            }
+                                        }
+                                        if (hoursExpanded == true) {
+                                            IconButton(onClick = { hoursExpanded = false }) {
+                                                Icon(
+                                                    imageVector = Icons.Outlined.ArrowBack,
+                                                    contentDescription = null
+                                                )
+                                            }
+                                        }
+                                    }
+                                )
+                                DropdownMenu(
+                                    expanded = hoursExpanded,
+                                    onDismissRequest = { hoursExpanded = false },
+                                    properties = PopupProperties(focusable = false),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    hoursList.forEach { label ->
+                                        DropdownMenuItem(onClick = {
+                                            hoursText = label
+                                            hoursExpanded = false
+                                        }) {
+                                            Text(text = label)
+                                        }
+                                    }
+                                }
+                                //only minutesText andminutesExpanded are different below
+                                OutlinedTextField(
+                                    value = minutesText,
+                                    onValueChange = { minutesText = it },
+                                    readOnly = true,
+                                    modifier = Modifier
+                                        .clickable { minutesExpanded = true }
+                                        .width(140.dp)
+                                        .padding(start = 20.dp, end = 20.dp),
+                                    trailingIcon = {
+                                        if (minutesExpanded == false) {
+                                            IconButton(onClick = { minutesExpanded = true }) {
+                                                Icon(
+                                                    imageVector = Icons.Outlined.ArrowDropDown,
+                                                    contentDescription = null
+                                                )
+                                            }
+                                        }
+                                        if (minutesExpanded == true) {
+                                            IconButton(onClick = { minutesExpanded = false }) {
+                                                Icon(
+                                                    imageVector = Icons.Outlined.ArrowBack,
+                                                    contentDescription = null
+                                                )
+                                            }
+                                        }
+                                    }
+                                )
+                                DropdownMenu(
+                                    expanded = minutesExpanded,
+                                    onDismissRequest = { minutesExpanded = false },
+                                    properties = PopupProperties(focusable = false),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    minutesList.forEach { label ->
+                                        DropdownMenuItem(onClick = {
+                                            minutesText = label
+                                            minutesExpanded = false
+                                        }) {
+                                            Text(text = label)
+                                        }
+                                    }
+                                }
+                            }
                         }
-                    }
-                }
-                Spacer (modifier=Modifier.height(20.dp))
-                Row{
-                    OutlinedTextField(
-                        label = {Text ("Pickup Time")}
+                        Spacer (modifier=Modifier.height(20.dp))
+                        Row{
+                            Text (
+                                "Total Cost",
+                                modifier=Modifier.padding(end=10.dp)
+                            )
+                            Text (totalCost.value.toString())
+                        }
+                        Spacer (modifier=Modifier.height(10.dp))
+                        Button(modifier = Modifier.padding (top=25.dp),
+                            onClick = { }) {
+                            Text ("Pay Now To Book.")
+                        }
+                    }}
                     )
-                }
-                Spacer (modifier=Modifier.height(20.dp))
-                Row{
-                    Text (
-                        "Total Cost",
-                        modifier=Modifier.padding(end=10.dp)
-                    )
-                    Text (totalCost.value.toString())
                 }
 
-            }
         }
-    }}
+    }
 
