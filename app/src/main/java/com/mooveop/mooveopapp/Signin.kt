@@ -37,8 +37,11 @@ class Signin : ComponentActivity() {
         {
 //            val mainActivityIntent = Intent(this, MainActivity::class.java)
 //            startActivity (mainActivityIntent)
-            val getRiderQuoteIntent = Intent(this, GetRiderQuoteActivity::class.java)
-            startActivity (getRiderQuoteIntent)
+//            val getRiderQuoteIntent = Intent(this, GetRiderQuoteActivity::class.java)
+//            startActivity (getRiderQuoteIntent)
+
+            val testIssueActivity = Intent(this, TestIssueActivity::class.java)
+            startActivity (testIssueActivity)
         }
     }
     private fun otpVerification(otp: String) {
