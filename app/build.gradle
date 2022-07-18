@@ -11,6 +11,10 @@ allprojects {
     }
 }
 android {
+    signingConfigs {
+        'new' {
+        }
+    }
     compileSdk 31
 
     defaultConfig {

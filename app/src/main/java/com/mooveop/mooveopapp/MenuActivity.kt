@@ -47,10 +47,14 @@ data class CartItem(
 )
 
 class MenuActivity : ComponentActivity() {
-    private var menuData by mutableStateOf (Chef())
+
+    //menuData is general shop data
+    private var menuData = mutableStateOf (Chef())
     private var chefName:String? = ""
+    //this is data of cart from shared preferences: as cart is stored in shared preferences.
     var myMenuMap = mutableMapOf <Int,CartItem>()
     var shopMap = mutableStateMapOf<String,MutableMap<Int,CartItem>>()
+    //menuItemList is the catalog
     var menuItemList = mutableStateListOf <CartItem>()
     var myShopMap = mutableMapOf <String,MutableList<CartItem>>()
     val PREFS_FILENAME = "com.kodeplay.mooveopapp.prefs"
@@ -71,14 +75,17 @@ class MenuActivity : ComponentActivity() {
             Response.Listener<String> { response ->
                 // Display the first 500 characters of the response string.
                 menuJson = "Response is: ${response.substring(0, 500)}"
-                println (response)
-                 menuData = Gson ().fromJson(
+                println (menuJson)
+                 menuData.value = Gson ().fromJson(
                     response,
                     Chef::class.java
                 )
+                println ("after json")
+                println (menuData)
+                println (menuData.value.menuList)
                 var theIndex = 0
                 var currentItemCartQuantity = 0
-                for (myMenuItem in menuData.menuList) {
+                for (myMenuItem in menuData.value.menuList) {
                     var currentItemCartQuantity = 0
                     if (myMenuMap.containsKey(myMenuItem.itemid)) {
                             currentItemCartQuantity =
@@ -140,18 +147,22 @@ class MenuActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         val intent = getIntent()
         chefName = intent.getStringExtra("chefName")
-
         if (chefName == null) {
             setContent {
                 Text ("Shop Name not received. Please contact - 9820011185")
             }
             }
         else {
+
             getMenu(chefName!!)
+            println ("after getMenu")
+            println (menuData)
             setContent {
+                var myMenuItemList = remember {menuItemList}
+                var myMenuData = remember {menuData}
                 isSessionCart = remember{ mutableStateOf(false)}
                 getSessionCart ()
-                var myMenuItemList = remember {menuItemList}
+
                 fun updateMenuItemCartQuantity (theIndex:Int,mode:String)
                 {
                     val cartCountBeforeClick = myMenuItemList[theIndex].itemCartQuantity
@@ -191,17 +202,17 @@ class MenuActivity : ComponentActivity() {
                             }
                     },
                     content= {
-                        if (menuData.menuList.size > 0) {
-                            println(menuData.chefprofilephoto)
-                            println(menuData.chefphotoname)
+                        if (myMenuData.value.menuList.size > 0) {
+                            println(myMenuData.value.chefprofilephoto)
+                            println(myMenuData.value.chefphotoname)
                             val profilePhotoId = resources.getIdentifier(
-                                menuData.chefprofilephoto.replace(
+                                myMenuData.value.chefprofilephoto.replace(
                                     "/images/",
                                     ""
                                 ).replace(".jpg", "").replace(".png", ""), "drawable", packageName
                             )
                             val chefPhotoId = resources.getIdentifier(
-                                menuData.chefphotoname.replace(
+                                myMenuData.value.chefphotoname.replace(
                                     "/images/",
                                     ""
                                 ).replace(".jpg", "").replace(".png", ""), "drawable", packageName
@@ -242,12 +253,12 @@ class MenuActivity : ComponentActivity() {
                                         )
                                         {
                                             Text(
-                                                text = menuData.chefname,
+                                                text = myMenuData.value.chefname,
                                                 modifier = Modifier.padding(5.dp),
                                                 fontSize = 20.sp
                                             )
                                             Text(
-                                                text = menuData.cuisinename,
+                                                text = myMenuData.value.cuisinename,
                                                 modifier = Modifier.padding(5.dp),
                                                 fontSize = 16.sp
                                             )
